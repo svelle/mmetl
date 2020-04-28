@@ -268,7 +268,7 @@ func AddPostToThreads(original SlackPost, post *IntermediatePost, threads map[st
 	timestamps[post.CreateAt] = true
 
 	// if post is part of a thread
-	if original.ThreadTS != "" && original.ThreadTS != original.TimeStamp {
+	if original.ThreadTS != "" && original.ThreadTS != original.TimeStamp && original.SubType != "thread_broadcast" {
 		rootPost, ok := threads[original.ThreadTS]
 		if !ok {
 			log.Printf("ERROR processing post in thread, couldn't find rootPost: %+v\n", original)
@@ -380,7 +380,7 @@ func TransformPosts(slackExport *SlackExport, intermediate *Intermediate, attach
 				if author == nil {
 					newUser := &IntermediateUser{
 						Id:        post.User,
-						Username:  post.User,
+						Username:  strings.ToLower(post.User),
 						FirstName: "Deleted",
 						LastName:  "User",
 						Email:     fmt.Sprintf("%s@local", post.User),
@@ -447,7 +447,7 @@ func TransformPosts(slackExport *SlackExport, intermediate *Intermediate, attach
 				if author == nil {
 					newUser := &IntermediateUser{
 						Id:        post.BotId,
-						Username:  post.BotId,
+						Username:  strings.ToLower(post.BotId),
 						FirstName: "Deleted",
 						LastName:  "Bot User",
 						Email:     fmt.Sprintf("%s@local", post.BotId),

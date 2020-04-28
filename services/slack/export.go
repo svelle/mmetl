@@ -255,6 +255,24 @@ func ExportVersion(writer io.Writer) error {
 	return ExportWriteLine(writer, versionLine)
 }
 
+func ExportTeam(team string, writer io.Writer) error {
+	teamType := "O"
+	teamDescription := "Imported From Slack Export"
+	teamOpenInvite := false
+	teamLine := &app.LineImportData{
+		Type: "team",
+		Team: &app.TeamImportData{
+			Name:            &team,
+			DisplayName:     &team,
+			Type:            &teamType,
+			Description:     &teamDescription,
+			AllowOpenInvite: &teamOpenInvite,
+		},
+	}
+
+	return ExportWriteLine(writer, teamLine)
+}
+
 // valid for open or private, as they export with no members
 func ExportChannels(team string, channels []*IntermediateChannel, writer io.Writer) error {
 	for _, channel := range channels {
@@ -309,6 +327,11 @@ func Export(team string, intermediate *Intermediate, outputFilePath string) erro
 
 	log.Println("Exporting version")
 	if err := ExportVersion(outputFile); err != nil {
+		return err
+	}
+
+	log.Println("Exporting team")
+	if err := ExportTeam(team, outputFile); err != nil {
 		return err
 	}
 
