@@ -46,19 +46,19 @@ type SlackFile struct {
 }
 
 type SlackPost struct {
-	User        string        `json:"user"`
-	BotId       string        `json:"bot_id"`
-	BotUsername string        `json:"username"`
-	Text        string        `json:"text"`
-	TimeStamp   string        `json:"ts"`
-	ThreadTS    string        `json:"thread_ts"`
-	Type        string        `json:"type"`
-	SubType     string        `json:"subtype"`
-	Comment     *SlackComment `json:"comment"`
-	Upload      bool          `json:"upload"`
-	File        *SlackFile    `json:"file"`
-	Files       []*SlackFile  `json:"files"`
-	//Root        *SlackPost               `json:"root"`
+	User        string                   `json:"user"`
+	BotId       string                   `json:"bot_id"`
+	BotUsername string                   `json:"username"`
+	Text        string                   `json:"text"`
+	TimeStamp   string                   `json:"ts"`
+	ThreadTS    string                   `json:"thread_ts"`
+	Type        string                   `json:"type"`
+	SubType     string                   `json:"subtype"`
+	Comment     *SlackComment            `json:"comment"`
+	Upload      bool                     `json:"upload"`
+	File        *SlackFile               `json:"file"`
+	Files       []*SlackFile             `json:"files"`
+	Root        *SlackPost               `json:"root"`
 	Attachments []*model.SlackAttachment `json:"attachments"`
 }
 
@@ -94,13 +94,13 @@ func (p *SlackPost) IsChannelNameMessage() bool {
 	return p.Type == "message" && p.SubType == "channel_name"
 }
 
-//func (p *SlackPost) IsReplyBroadCastMessage() bool {
-//	return p.Type == "message" && p.SubType == "reply_broadcast"
-//}
-//
-//func (p *SlackPost) IsThreadBroadCastMessage() bool {
-//	return p.Type == "message" && p.SubType == "thread_broadcast"
-//}
+func (p *SlackPost) IsReplyBroadCastMessage() bool {
+	return p.Type == "message" && p.SubType == "reply_broadcast"
+}
+
+func (p *SlackPost) IsThreadBroadCastMessage() bool {
+	return p.Type == "message" && p.SubType == "thread_broadcast"
+}
 
 type SlackComment struct {
 	User    string `json:"user"`

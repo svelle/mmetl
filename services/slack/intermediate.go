@@ -87,16 +87,15 @@ func (u *IntermediateUser) Sanitise() {
 }
 
 type IntermediatePost struct {
-	User     string                `json:"user"`
-	Channel  string                `json:"channel"`
-	Message  string                `json:"message"`
-	Props    model.StringInterface `json:"props"`
-	CreateAt int64                 `json:"create_at"`
-	// Type           string              `json:"type"`
-	Attachments    []string            `json:"attachments"`
-	Replies        []*IntermediatePost `json:"replies"`
-	IsDirect       bool                `json:"is_direct"`
-	ChannelMembers []string            `json:"channel_members"`
+	User           string                `json:"user"`
+	Channel        string                `json:"channel"`
+	Message        string                `json:"message"`
+	Props          model.StringInterface `json:"props"`
+	CreateAt       int64                 `json:"create_at"`
+	Attachments    []string              `json:"attachments"`
+	Replies        []*IntermediatePost   `json:"replies"`
+	IsDirect       bool                  `json:"is_direct"`
+	ChannelMembers []string              `json:"channel_members"`
 }
 
 type Intermediate struct {
@@ -552,6 +551,90 @@ func TransformPosts(slackExport *SlackExport, intermediate *Intermediate, attach
 					Message:  post.Text,
 					CreateAt: SlackConvertTimeStamp(post.TimeStamp),
 					// Type:     model.POST_DISPLAYNAME_CHANGE,
+				}
+
+				AddPostToThreads(post, newPost, threads, channel, timestamps)
+
+			case post.IsReplyBroadCastMessage():
+				if post.User == "" {
+					log.Println("Slack Import: Unable to import the message as the user field is missing.")
+					continue
+				}
+				author := intermediate.UsersById[post.User]
+				if author == nil {
+					newUser := &IntermediateUser{
+						Id:        post.User,
+						Username:  strings.ToLower(post.User),
+						FirstName: "Deleted",
+						LastName:  "User",
+						Email:     fmt.Sprintf("%s@local", post.User),
+						Password:  model.NewId(),
+					}
+
+					intermediate.UsersById[post.User] = newUser
+					log.Println("Slack Import: Created new user because original user missing form the import files. user=" + post.User)
+					author = intermediate.UsersById[post.User]
+				}
+				newPost := &IntermediatePost{
+					User:     author.Username,
+					Channel:  channel.Name,
+					Message:  post.Text,
+					CreateAt: SlackConvertTimeStamp(post.TimeStamp),
+				}
+				if post.Upload && !skipAttachments {
+					if post.File != nil {
+						addFileToPost(post.File, slackExport.Uploads, newPost, attachmentsDir)
+					} else if post.Files != nil {
+						for _, file := range post.Files {
+							addFileToPost(file, slackExport.Uploads, newPost, attachmentsDir)
+						}
+					}
+				}
+
+				if len(post.Attachments) > 0 {
+					newPost.Props = model.StringInterface{"attachments": post.Attachments}
+				}
+
+				AddPostToThreads(post, newPost, threads, channel, timestamps)
+
+			case post.IsThreadBroadCastMessage():
+				if post.User == "" {
+					log.Println("Slack Import: Unable to import the message as the user field is missing.")
+					continue
+				}
+				author := intermediate.UsersById[post.User]
+				if author == nil {
+					newUser := &IntermediateUser{
+						Id:        post.User,
+						Username:  strings.ToLower(post.User),
+						FirstName: "Deleted",
+						LastName:  "User",
+						Email:     fmt.Sprintf("%s@local", post.User),
+						Password:  model.NewId(),
+					}
+
+					intermediate.UsersById[post.User] = newUser
+					log.Println("Slack Import: Created new user because original user missing form the import files. user=" + post.User)
+					author = intermediate.UsersById[post.User]
+				}
+				newPost := &IntermediatePost{
+					User:     author.Username,
+					Channel:  channel.Name,
+					Message:  post.Text,
+					CreateAt: SlackConvertTimeStamp(post.TimeStamp),
+				}
+				if post.Upload && !skipAttachments {
+					if post.File != nil {
+						addFileToPost(post.File, slackExport.Uploads, newPost, attachmentsDir)
+					} else if post.Files != nil {
+						for _, file := range post.Files {
+							addFileToPost(file, slackExport.Uploads, newPost, attachmentsDir)
+						}
+					}
+				}
+
+				if len(post.Attachments) > 0 {
+					newPost.Props = model.StringInterface{"attachments": post.Attachments}
 				}
 
 				AddPostToThreads(post, newPost, threads, channel, timestamps)
